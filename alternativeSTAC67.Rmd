@@ -1,0 +1,355 @@
+---
+title: "Alternative Analysis"
+author: "Dwight"
+date: "April 1, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background and Significance 
+
+The housing market has for a long time been an important topic of discussion among homebuyers and real estate owners. According to RBC's annual homeownership poll, 50 per cent of those aged between 18 and 34 claimed they were likely to purchase within the next year (Powell, 2018). However, there is still the obstacle of being able to afford a house for potential buyers. It is not much of a secret to many that house pricing has gone up drastically from many years ago. In fact, in the United States, 41 states have seen median housing price rise from 2007 to 2017 (Digg, 2018). Currently, the median home value in the United States is $226,300, which is up 7.2 per cent from the previous year ("United States Home Prices & Values", 2019). There are several factors which may be attributed to house pricing. Here we propose a model to accurately predict the median value of homes in Boston suburbs. If the median pricing of houses can be predicted, then that would give helpful insights to potential buyers, and for real estate investors. It may also be used to help understand drastic shifts in house pricing, known as housing bubbles, which can damage the economy (Kenton, 2018).
+
+Our purpose is: Magnitude |beta|.
+Identity which factor has statistically significant effect on the house pricing and investigate the magnitude of these factors
+
+
+##Explantory Data Analysis
+#Per capita crime rate by town is the amount of crime that happens for each person in town. This is important as areas that higher crime rates tend to be viewed as undesirable places to live.
+Proportion of residential land zoned for lots over 25 000 sq.ft(PRL)
+This is the fraction of residential land that has a lot size of over 25000 sq.ft. The average size of an American home in 2015 was 2687 sq.ft (Geffner), so it stand to reason that any lot significantly larger than 2687 sq.ft is massive. More land a property has the more value the property obtains.
+Source:
+https://www.newhomesource.com/guide/articles/how-much-square-footage-fits-your-family
+
+#Proportion of non-retail business acres per town (PNB)
+This is the amount of land that is currently occupied by businesses that are not in retail. This may be important as one considerations home buyers often make when purchasing a home is whether a home is close to amenities like groceries (Williams, 2014).
+Source: https://loans.usnews.com/when-house-hunting-how-to-assess-a-neighborhood 
+
+#Charles River dummy variable (CRD)
+This is an indicator variable determining whether or not a home is near the Charles river. Zero indicates the home is not near the Charles River, while one indicates otherwise.
+
+#Nitric oxide concentration (parts per 10 million) (NOC)
+The higher concentration of nitric oxide represents more air pollution in the area. This is important as high air pollution levels can cause health problems.
+
+#Average Number of rooms per dwelling (NRB)
+The average number of rooms may affect the home value since adding rooms can meet more demands of people. 
+
+#Proportion of owner occupied units built prior to 1940 (POO)
+The proportion of owner-occupied units built prior to 1940 represents the percentage of the old houses that built before 1940. This is an essential measurement since the houses' age may influence their price. 
+(Hardle and Simar, 2007)
+Source:
+https://books.google.ca/books?id=QWKOZIZdnhMC&pg=PA33&lpg=PA33&dq=Weighted+distances+to+five+Boston+employment+centres&source=bl&ots=7kx_UcfKSb&sig=ACfU3U33zYIRikw9I5tb8N_DF6uQFmkDlA&hl=en&sa=X&ved=2ahUKEwiw2dSCjZ_hAhVk64MKHXCTCOEQ6AEwAnoECAkQAQ#v=onepage&q=Weighted%20distances%20to%20five%20Boston%20employment%20centres&f=false
+
+#Weighted distances to five Boston employment centres (WBE)
+The weighted distances to five Boston employment centres measure the distance between the living places and the five main working places in Boston. This may be important as most people like to live close to their place of work. 
+
+#Index of accessibility to radial highways (RAD)
+Index of accessibility to radial highways is the normal of radial highways that are close are in the town. Radial highways are highways that lead to urban centres.
+
+#Full-value property-tax rate per 10000(FPT)
+Full-value property-tax rate per 10000 is the amount of tax you have to pay per $10000 of house worth. This might have an effect on housing value because there may be more accessible public services in the area
+
+#Pupil-teacher ratio by town (PTR)
+The number of students per teacher in the town. This is important to measure because education can be a factor into housing value
+
+#1000(B - 0.63)2 where B is the proportion of African Americans by town (PAA)
+The proportion of african americans by town is the number of african americans over the the number of people in the town meaning that the higher the proportion of african americans the lower the housing value
+
+#A numeric vector of percentage values of lower status population (PLP)
+The percentage of lower status population the percentage of population that is poor in the area
+
+ 
+
+```{r, include = FALSE}
+# include = FALSE -> chunk not included in the doc after running 
+require("mosaic")
+```
+
+```{r, warning = FALSE, include=FALSE}
+setwd("C:/Users/Dwight/Documents/UTSC/STAC67/Case Study")
+bostonhousing <- read.csv("C:/Users/Dwight/Documents/UTSC/STAC67/Case Study/housing.proper.csv", 
+                      quote="\"", comment.char="")
+colnames(bostonhousing) <- c("PCC","PRL","PNB","CRD","NOC",
+                    "NRB","POO","WBE","RAD","FPT","PTR","PAA", "PLP", "Y")
+set.seed(24)
+dataframehousing <- data.frame(bostonhousing)
+bostonhousingsample<- sample(bostonhousing, 253)
+bostonhousing2 <- select(bostonhousing, c("Y", "PCC","NRB","PAA","CRD","PRL", "FPT", "PLP"))
+bostonhousing3 <- select(bostonhousing, c("Y", "PCC", "CRD", "NOC","NRB","WBE","RAD","FPT","PTR","PAA","PLP", "PRL"))
+```
+
+```{r pressure, include = FALSE}
+library(car)
+pairs(bostonhousing)
+```
+
+```{r pressure, include = FALSE}
+#determine any correlation between variables
+varCor0 <- cor(bostonhousing)
+varCor0
+
+# double braket means extremely strong correlation
+
+# moderate correlation between (PCC and RAD), (PRL and WBE), (PNB and PLP), (PNB and POO), (NOC and RAd),
+# (NOC and FPT), (NRB and PLP)
+
+#strong correlation between (PNB and FPT), (PNB and WBE), (PNB and NOC), (NOC and POO), (NOC and WBE), (POO and WBE),
+# ((RAD and FPT))
+```
+
+```{r pressure, include = FALSE}
+#drop RAD bc FPT is calculated with values of RAD
+bostonhousing2 <- select(bostonhousing, c("PCC","PRL","PNB","CRD","NOC",
+                    "NRB","POO","WBE","FPT","PTR","PAA", "PLP", "Y"))
+#determine any correlation between variables
+varCor1 <- cor(bostonhousing2)
+varCor1
+
+# double braket means extremely strong correlation
+
+# moderate correlation between (PRL and WBE), (PNB and PLP), (PNB and POO),
+# (NOC and FPT), (NRB and PLP)
+
+#strong correlation between (PNB and FPT), (PNB and WBE), (PNB and NOC), (NOC and POO), (NOC and WBE), (POO and WBE)
+#
+```
+
+##Model Building
+
+```{r pressure, echo=FALSE}
+model1 = lm(Y ~ PCC + PRL + PNB + CRD + NOC + NRB + POO + WBE + RAD + FPT + PTR + PAA + PLP, data = bostonhousingsample)
+summary(model1)
+
+mplot(model1, which = 1)
+mplot(model1, which = 2)
+```
+
+```{r, include=FALSE}
+#model1_preRed is model without RAD with we pre-reduced in explanatory data
+model1_preRed = lm(Y ~ PCC + PRL + PNB + CRD + NOC + NRB + POO + WBE + FPT + PTR + PAA + PLP, data = bostonhousingsample)
+summary(model1_preRed)
+#in this case, by taking away RAD only, the estimators get very small and less variables are significant (7variables)
+# but there is relatively the same amount of explanatory power
+```
+
+```{r pressure, echo=FALSE}
+#model1_preRed is model without FPT with we pre-reduced in explanatory data
+model1_preRedAlt = lm(Y ~ PCC + PRL + PNB + CRD + NOC + NRB + POO + WBE + RAD + PTR + PAA + PLP, data = bostonhousingsample)
+summary(model1_preRedAlt)
+#in this case, by taking away FPT only, the estimators are relatively unchanged
+#8 variables are significant here
+
+mplot(model1_preRedAlt, which = 1)
+mplot(model1_preRedAlt, which = 2)
+```
+
+```{r pressure, echo=FALSE}
+# lets consider the log of the full model
+model2 = lm(log(Y) ~ PCC + PRL + PNB + CRD + NOC + NRB + POO + WBE + RAD + FPT + PTR + PAA + PLP, data = bostonhousingsample)
+summary(model2)
+
+mplot(model2, which = 1)
+mplot(model2, which = 2)
+```
+
+```{r pressure, echo=FALSE}
+#consider log of model1_preRed is model without RAD with we pre-reduced in explanatory data
+model2_preRedAlt = lm(log(Y) ~ PCC + PRL + PNB + CRD + NOC + NRB + POO + WBE + RAD + PTR + PAA + PLP, data = bostonhousingsample)
+summary(model2_preRedAlt)
+
+mplot(model2_preRedAlt, which = 1)
+mplot(model2_preRedAlt, which = 2)
+```
+
+The model is best without logarithm 
+
+
+```{r pressure, echo=FALSE}
+#stepwise selection----------------------------------------------------------------------------
+#usining model1_preRedAlt
+library(MASS)
+step <- stepAIC(model2_preRedAlt,direction="both")
+step$anova
+qqnorm(model2_preRedAlt$residuals)
+```
+
+```{r pressure, echo=FALSE}
+#show the summary for model after stepwise selection
+model2_StepAlt = lm(log(Y) ~ PRL + CRD + NOC + NRB + POO + WBE + RAD + PTR + PAA + PLP, data = bostonhousingsample)
+summary(model2_StepAlt)
+#----------------------------------------------------------------------------------------------
+```
+
+```{r pressure, echo=FALSE}
+#PRL (proportion of reidential land zoned over 25k sq.ft), POO (proportion of owner occupied units built pre-1940)
+# and RAD (accessibilty of highways that lead to urban centers) are variables stepAIC has shown insignificant
+
+# i reccommend dropping POO because according research housing value is influenced by the size of the house and the accessibilty to services including major highways
+
+# manual criterion selection----------------------------------------------------
+
+#model selection procedures (SSRes, R2, R2_adj, C and AIC)
+SSRes <- sum(model1$residuals^2)
+R2 <- summary(model1)$r.squared
+R2_adj <- summary(model1)$adj.r.squared
+p_prime <- length(model1)
+s <- summary(model1)$sigma
+n <- nrow(bostonhousingsample)
+C <- SSRes/s^2 + 2*p_prime - n
+AIC <- n*log(SSRes) - n*log(n) + 2*p_prime
+
+#create table to see all selection crriteria at one time
+
+#helper function
+model_criteria = function(model, n, s)
+{
+  SSRes <- sum(model$residuals^2)
+  R2 <- summary(model)$r.squared
+  R2_adj <- summary(model)$adj.r.squared
+  p_prime <- length(model$coefficients)
+  C <- SSRes/s^2 + 2*p_prime - n
+  C_diff <- C - p_prime # the difference between C and p_prime to determine which is closest
+  AIC <- n*log(SSRes) - n*log(n) + 2*p_prime
+  result <- c(SSRes, R2, R2_adj, C, C_diff, AIC)
+  names(result) <- c("SSRes", "R2", "R2_adj", "C", "C_diff", "AIC")
+  return(result)
+}
+
+#function that actuallly creates the table
+s <- summary(model1)$sigma
+n <- nrow(bostonhousingsample) 
+round(rbind(
+  #model selected by stepAIC function 
+   model_criteria(lm(Y ~ PRL + CRD + NOC + NRB + POO + WBE + RAD + PTR + PAA + PLP, data = bostonhousingsample), n, s),
+   #singles
+   #model selected by stepAIC function: without POO
+   model_criteria(lm(Y ~ PRL + CRD + NOC + NRB + WBE + RAD + PTR + PAA + PLP, data = bostonhousingsample), n, s),
+   #model selected by stepAIC function: without PRL
+   model_criteria(lm(Y ~ CRD + NOC + NRB + POO + WBE + RAD + PTR + PAA + PLP, data = bostonhousingsample), n, s),
+   #model selected by stepAIC function: without RAD
+   model_criteria(lm(Y ~ PRL + CRD + NOC + NRB + POO + WBE + PTR + PAA + PLP, data = bostonhousingsample), n, s),
+   #duos
+   #model selected by stepAIC function: without POO and PRL
+   model_criteria(lm(Y ~ CRD + NOC + NRB + WBE + RAD + PTR + PAA + PLP, data = bostonhousingsample), n, s),
+   #model selected by stepAIC function: without POO and RAD
+   model_criteria(lm(Y ~ PRL + CRD + NOC + NRB + WBE + PTR + PAA + PLP, data = bostonhousingsample), n, s),
+   #model selected by stepAIC function: without PRL and RAD
+   model_criteria(lm(Y ~ CRD + NOC + NRB + POO + WBE + PTR + PAA + PLP, data = bostonhousingsample), n, s),
+   #trios --> model recommended by group
+   #model selected by stepAIC function: without POO, PRL and RAD
+   model_criteria(lm(Y ~ CRD + NOC + NRB + WBE + PTR + PAA + PLP, data = bostonhousingsample), n, s)
+), digits = 3) 
+
+# the original model without FPT has R2: 0.7465 and R2_adj: 0.7338
+#--------------------------------------------------------------------------------------
+```
+
+Loss in R2 and R2 adj is negligable, thus we must use other citeriea to determine the best model.
+According to C criterion and AIC criterion the model [1]: (Y ~ PRL + CRD + NOC + NRB + POO + WBE + RAD + PTR + PAA + PLP) is the best, followed by model [3]: (Y ~ CRD + NOC + NRB + POO + WBE + RAD + PTR + PAA + PLP).
+
+## Model Validation
+```{r, echo=FALSE}
+sel_model = lm(log(Y) ~ PRL + CRD + NOC + NRB + POO + WBE + RAD + PTR + PAA + PLP, data = bostonhousingsample)
+dataset_test <- bostonhousing[setdiff(rownames(bostonhousing),rownames(bostonhousingsample)),]
+valid_test <- dataset_test[,c("PRL","CRD","NOC","NRB","POO","WBE", "RAD","PTR","PAA","PLP")]
+Y_pred <- predict(sel_model, valid_test)
+Y_obs <- log(dataset_test[,14])
+n_star <- nrow(valid_test)
+MSPE <- sum( (Y_obs-Y_pred)^2/n_star )
+MS_res <- (summary(sel_model)$sigma)^2
+MSPE 
+MS_res
+```
+
+this model is valid bc MSPE is about equal to  MS_res
+
+## Model Diagnostic
+
+```{r pressure, echo=FALSE}
+library(car)
+data_model = lm(log(Y) ~ PRL + CRD + NOC + NRB + POO + WBE + RAD + PTR + PAA + PLP, data = bostonhousing)
+attach(bostonhousing)
+qqnorm(data_model$residuals)
+
+```
+
+# Functional Form
+```{r, echo=FALSE, include=False}
+plot(data_model$residuals~ PRL, xlab = "Proportion of residential land zoned for lots over 25 000 sq.ft", ylab = "Residuals")
+abline(h = 0)
+plot(data_model$residuals~CRD, xlab = "Charles River Dummy Variable", ylab = "Residuals")
+abline(h = 0)
+plot(data_model$residuals~NOC, xlab = "Nitric Oxide Concentration(Parts per Million)", ylab = "Residuals")
+abline(h = 0)
+plot(data_model$residuals~ NRB, xlab = "average number of rooms per dwelling", ylab = "Residuals")
+abline(h = 0)
+plot(data_model$residuals~ POO, xlab = "Proportion of owner occupied units built prior to 1940 ", ylab = "Residuals")
+abline(h = 0)
+plot(data_model$residuals~WBE, xlab = "weighted distances to five Boston employment centres", ylab = "Residuals")
+abline(h = 0)
+plot(data_model$residuals~RAD, xlab = "index of accessibility to radial highways", ylab = "Residuals")
+abline(h = 0)
+plot(data_model$residuals~PTR, xlab = "pupil-teacher ratio by town", ylab = "Residuals")
+abline(h = 0)
+plot(data_model$residuals~PAA, xlab = "1000(B ??? 0.63)2 where B is the proportion of African Americans by town", ylab = "Residuals")
+abline(h = 0)
+plot(data_model$residuals~PLP, xlab = "a numeric vector of percentage values of lower status population", ylab = "Residuals")
+abline(h = 0)
+plot(data_model$residuals~data_model$fitted.values, xlab = "Fitted values", ylab = "Residuals")
+abline(h = 0)
+```
+
+#Outlying Y observations
+#Statistical test
+```{r, echo=False}
+outlierTest(data_model)
+```
+
+#Outlying X observations
+```{r, echo=False, include=False}
+Pii <- hatvalues(data_model)
+round(Pii, 2)
+which(Pii > 2*(length(data_model$coefficients))/n)
+which(Pii > 0.5)
+```
+
+#Influence
+```{r, echo=False}
+influencePlot(data_model,	id.method="identify", 
+              main="Influence Plot", 
+              sub="Circle size is proportial to Cook's Distance" )
+DFFITS <- dffits(data_model)
+which(abs(DFFITS) > 1)
+which(abs(DFFITS) > 2*(p_prime/n)^(1/2))
+D <- cooks.distance(data_model)
+which(D > qf(0.2, 11, 242))
+DFBETAS <- dfbetas(data_model)
+head(DFBETAS)
+which(abs(DFBETAS) > 1)
+which(abs(DFBETAS) > 2/n^(1/2))
+```
+
+#Multicollinearity
+```{r}
+VIF <- vif(data_model)
+VIF
+VIFbar <- mean(vif(data_model))
+VIFbar
+
+```
+
+#Plots
+```{r}
+layout(matrix(c(1,2,3,4),2,2)) # optional 4 graphs/page
+plot(data_model)
+mplot(data_model, which = 1)
+```
+```{r}
+finalmod = lm(Y ~ PRL + CRD + NOC + NRB + POO + WBE + RAD + PTR + PAA + PLP, data = bostonhousingsample)
+summary(finalmod)
+
+```
+
